@@ -2,11 +2,10 @@
 # display command line options
 
 count=1
-<<<<<<< HEAD
 for param in "$@"; do
-=======
-for param in "$*"; do
->>>>>>> git-merge
     echo "\$* Parameter #$count = $param"
+for param in "$@"; do
+    echo "Parameter: $param"
     count=$(( $count + 1 ))
 done
+
