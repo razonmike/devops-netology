@@ -48,6 +48,8 @@ git grep 'func globalPluginDirs'
 
 plugins.go:func globalPluginDirs() []string {
 
+
+
 git log -L :'func globalPluginDirs':plugins.go --oneline
 
 78b122055 Remove config.go and update things using its aliases
