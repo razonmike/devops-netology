@@ -1,63 +1,160 @@
-Домашнее задание к занятию «2.4. Инструменты Git»
+Домашнее задание к лекции №3.2
+1. Какого типа команда cd? Попробуйте объяснить, почему она именно такого типа; опишите ход своих мыслей, если считаете что она могла бы быть другого типа.
 
-1. Найдите полный хеш и комментарий коммита, хеш которого начинается на aefea.
-git show aefea
-Author: Alisdair McDiarmid <alisdair@users.noreply.github.com>
-Date:   Thu Jun 18 10:29:58 2020 -0400
-aefead220 Update CHANGELOG.md
+```
+#type cd
+cd is a shell builtin
+```
 
-2. Какому тегу соответствует коммит 85024d3?
-git show 85024
-commit 85024d3100126de36331c6982bfaac02cdab9e76 (tag: v0.12.23)
+Операционная система не считается таковой, если в ней нет возможности перемещаться по директориям. Соответственно команда cd есть во всех ОС, она уже включена в неё. Поэтому она и называется builtin - то есть она уже включена в само ядро ОС. Например если ОС загрузится не полностью, а только grub, команда cd всё равно будет доступна.
 
-3. Сколько родителей у коммита b8d720? Напишите их хеши.
-git show b8d720
-commit b8d720f8340221f2146e4e4870bf2ee0bc48f2d5
-Merge: 56cd7859e 9ea88f22f
+2. Какая альтернатива без pipe команде grep <some_string> <some_file> | wc -l? man grep поможет в ответе на этот вопрос. Ознакомьтесь с документом о других подобных некорректных вариантах использования pipe.
 
-У коммита коммита 2 родителя:
-git show 56cd7859e
-commit 56cd7859e05c36c06b56d013b55a252d0bb7e158
+```
+#grep <some_string> <some_file> -c
+```
 
-git show 9ea88f22f
-commit 9ea88f22fc6269854151c571162c5bcf958bee2b
+```
+-c : This prints only a count of the lines that match a pattern
+```
 
-4. Перечислите хеши и комментарии всех коммитов которые были сделаны между тегами v0.12.23 и v0.12.24.
-git log  v0.12.23..v0.12.24  --oneline
+3. Какой процесс с PID 1 является родителем для всех процессов в вашей виртуальной машине Ubuntu 20.04?
 
-33ff1c03b (tag: v0.12.24) v0.12.24
-b14b74c49 [Website] vmc provider links
-3f235065b Update CHANGELOG.md
-6ae64e247 registry: Fix panic when server is unreachable
-5c619ca1b website: Remove links to the getting started guide's old location
-06275647e Update CHANGELOG.md
-d5f9411f5 command: Fix bug when using terraform login on Windows
-4b6d06cc5 Update CHANGELOG.md
-dd01a3507 Update CHANGELOG.md
-225466bc3 Cleanup after v0.12.23 release
+```
+#pstree -p
 
+systemd(1)
+```
 
-5. Найдите коммит в котором была создана функция func providerSource, ее определение в коде выглядит так func providerSource(...) (вместо троеточего перечислены аргументы).
-git log -S'func providerSource' --oneline
+4. Как будет выглядеть команда, которая перенаправит вывод stderr ls на другую сессию терминала?
 
-5af1e6234 main: Honor explicit provider_installation CLI config when present
-8c928e835 main: Consult local directories as potential mirrors of providers
+```
+#ls 123 2>/dev/pts/1
+```
 
-6. Найдите все коммиты в которых была изменена функция globalPluginDirs.
-git grep 'func globalPluginDirs'
+123 это файл которого, не существует чтобы вызвать ошибку для stderr
 
-plugins.go:func globalPluginDirs() []string {
+5. Получится ли одновременно передать команде файл на stdin и вывести ее stdout в другой файл? Приведите работающий пример.
 
+```
+#cat test.in
+123
+456
 
+#cat test.out 
+cat: test.out: No such file or directory
 
-git log -L :'func globalPluginDirs':plugins.go --oneline
+#cat <test.in >test.out
+#cat test.out
+123 
+456
+```
 
-78b122055 Remove config.go and update things using its aliases
-52dbf9483 keep .terraform.d/plugins for discovery
-41ab0aef7 Add missing OS_ARCH dir to global plugin paths
+6. Получится ли находясь в графическом режиме, вывести данные из PTY в какой-либо из эмуляторов TTY? Сможете ли вы наблюдать выводимые данные?
 
-7. Кто автор функции synchronizedWriters?
-git log -S'func synchronizedWriters' --pretty=format:'%h - %an %ae'
+```
+#tty
+/dev/pts/0
+#echo "Hello, World!" > /dev/pts/1
 
-bdfea50cc - James Bardin j.bardin@gmail.com
-5ac311e2a - Martin Atkins mart@degeneration.co.uk
+#Hello, World!
+```
+
+Да, с помощью команды выше можно вывести данные на соседний эмулятор TTY, можно наблюдать выводимые данные
+
+7. Выполните команду bash 5>&1. К чему она приведет? Что будет, если вы выполните echo netology > /proc/$$/fd/5? Почему так происходит?
+
+```
+Команда bash 5>&1 позволяет создать файловый дескриптор 5 и перенаправить вывод с него на 1 дескриптор stdout.
+echo netology > /proc/$$/fd/5 выведет файл  netology в дескриптор 5, а он был перенаправлен на 1 дескриптор stdout
+```
+
+8. Получится ли в качестве входного потока для pipe использовать только stderr команды, не потеряв при этом отображение stdout на pty? Напоминаем: по умолчанию через pipe передается только stdout команды слева от | на stdin команды справа. Это можно сделать, поменяв стандартные потоки местами через промежуточный новый дескриптор, который вы научились создавать в предыдущем вопросе.
+
+```
+#cat /root/file.in 3>&2 2>&1 1>&3
+cat: /root/file.in: Permission denied
+
+3>&2 дескриптор 3 перенаправил в stderr
+2>&1 stderr перенаправил в stdout 
+1>&3 stdout перенаправил в дескриптор 3
+
+#cat /root/file.in 3>&2 2>&1 1>&3 | grep Permission
+cat: /root/file.in: Permission denied
+```
+
+9. Что выведет команда cat /proc/$$/environ? Как еще можно получить аналогичный по содержанию вывод?
+
+Команда выводит переменные окружения
+Информацию из данной команды можно вывести командой 
+env
+
+10. Используя man, опишите что доступно по адресам /proc/<PID>/cmdline, /proc/<PID>/exe.
+
+```
+/proc/<PID>/cmdline
+```
+
+```
+Этот файл (доступный только для чтения) содержит полный путь процесса, если этот процесс не является зомби. Если процесс зомби то есть чтение этого файла ничего не выдаст. Аргументы командной строки отображаются в этом файле как набор строк, и не разделены пробелом
+
+чтобы отобразить путь с пробелами нужно добавить аргумент через pipe - tr '\000' ' ' или xargs -0 echo
+```
+
+```
+/proc/<PID>/exe
+```
+
+```
+В Linux 2.2 и более поздних версиях этот файл представляет собой символическую ссылку, содержащую фактический путь к выполняемой команде. Эта символическая ссылка может быть разыменована (dereference) обычным образом; Попытка открыть его откроет исполняемый файл. Можно ввести /proc/[pid]/exe, чтобы запустить другую копию того же исполняемого файла, который запускается процессом [pid]. Если путь был несвязан, символическая ссылка будет содержать строку «удалено», добавленную к исходному имени пути. В многопоточном процессе содержимое этой символической ссылки недоступно, если основной поток уже завершен (обычно путем вызова pthread_exit(3)).
+
+Разрешение на разыменование или чтение (readlink(2)) этой символической ссылки управляется проверкой режима доступа ptrace PTRACE_MODE_READ_FSCREDS; см. ptrace(2).
+
+В Linux 2.0 и более ранних версиях /proc/[pid]/exe является указателем на исполняемый двоичный файл и отображается как символическая ссылка.
+```
+
+11. Узнайте, какую наиболее старшую версию набора инструкций SSE поддерживает ваш процессор с помощью /proc/cpuinfo.
+
+sse4_1 sse4_2
+```
+#cat /proc/cpuinfo | grep sse
+lags           : fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc rep_good nopl xtopology cpuid pni pclmulqdq vmx ssse3 fma cx16 pcid sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch invpcid_single pti ssbd ibrs ibpb stibp tpr_shadow vnmi ept vpid ept_ad fsgsbase bmi1 avx2 smep bmi2 erms invpcid rdseed adx smap clflushopt xsaveopt xsavec xgetbv1 xsaves md_clear flush_l1d arch_capabilities
+```
+
+12. При открытии нового окна терминала и vagrant ssh создается новая сессия и выделяется pty. Это можно подтвердить командой tty, которая упоминалась в лекции 3.2. Однако:
+```
+vagrant@netology1:~$ ssh localhost 'tty'
+not a tty
+```
+Почитайте, почему так происходит, и как изменить поведение.
+
+Запуская ssh без команды, только для входа в систему, автоматически выделяется pty. Но если указать команду для выполнения в командной строке, по умолчанию ssh не выделяет pty. Чтобы выделить его, нужно указать параметр -t для ssh
+
+```
+ssh -t localhost 'tty'
+vagrant@localhost's password: 
+/dev/pts/2
+Connection to localhost closed.
+```
+
+13. Бывает, что есть необходимость переместить запущенный процесс из одной сессии в другую. Попробуйте сделать это, воспользовавшись reptyr. Например, так можно перенести в screen процесс, который вы запустили по ошибке в обычной SSH-сессии.
+
+Поменять параметр в /proc/sys/kernel/yama/ptrace_scope на 0. После чего запускаем на первой вкладке screen и смотрим ID процесса на второй вкладке и перехватываем по ID процесса
+```
+sudo vim /proc/sys/kernel/yama/ptrace_scope
+
+$ ps -a 
+  PID TTY          TIME CMD 
+ 2774 tty1     00:00:00 sudo 
+ 3039 tty1     00:00:00 bash 
+24608 pts/0    00:00:00 sudo 
+24673 pts/0    00:00:00 vim 
+25503 pts/0    00:00:00 screen 
+29632 pts/1    00:00:00 ps
+
+$ sudo reptyr -T 25503
+```
+
+14. sudo echo string > /root/new_file не даст выполнить перенаправление под обычным пользователем, так как перенаправлением занимается процесс shell'а, который запущен без sudo под вашим пользователем. Для решения данной проблемы можно использовать конструкцию echo string | sudo tee /root/new_file. Узнайте что делает команда tee и почему в отличие от sudo echo команда с sudo tee будет работать.
+
+tee читает stdin и записывает его как в stdout, так и в один или несколько файлов. По сути, она разбивает вывод программы, чтобы его можно было отображать в консоли и сохранять в файле. Он выполняет обе задачи одновременно, копирует результат в указанные файлы или переменные, а также отображает результат.
