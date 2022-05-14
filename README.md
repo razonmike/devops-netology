@@ -1,122 +1,174 @@
-Домашнее задание к лекции №3.3
+Домашнее задание к лекции №3.4
 
-1. Какой системный вызов делает команда cd? В прошлом ДЗ мы выяснили, что cd не является самостоятельной программой, это shell builtin, поэтому запустить strace непосредственно на cd не получится. Тем не менее, вы можете запустить strace на /bin/bash -c 'cd /tmp'. В этом случае вы увидите полный список системных вызовов, которые делает сам bash при старте. Вам нужно найти тот единственный, который относится именно к cd.
-
-
-```
-chdir("/tmp")
-```
-
-2. Попробуйте использовать команду file на объекты разных типов на файловой системе. Например:
-```
-vagrant@netology1:~$ file /dev/tty
-/dev/tty: character special (5/0)
-vagrant@netology1:~$ file /dev/sda
-/dev/sda: block special (8/0)
-vagrant@netology1:~$ file /bin/bash
-/bin/bash: ELF 64-bit LSB shared object, x86-64
-```
-Используя strace выясните, где находится база данных file на основании которой она делает свои догадки.
-
+1. На лекции мы познакомились с node_exporter. В демонстрации его исполняемый файл запускался в background. Этого достаточно для демо, но не для настоящей production-системы, где процессы должны находиться под внешним управлением. Используя знания из лекции по systemd, создайте самостоятельно простой unit-файл для node_exporter:
 
 ```
-openat(AT_FDCWD, "/usr/share/misc/magic.mgc", O_RDONLY) = 3
-```
-База данных находится в /usr/share/misc/magic.mgc
+sudo vim /etc/systemd/system/node_exporter.service
 
-3. Предположим, приложение пишет лог в текстовый файл. Этот файл оказался удален (deleted в lsof), однако возможности сигналом сказать приложению переоткрыть файлы или просто перезапустить приложение – нет. Так как приложение продолжает писать в удаленный файл, место на диске постепенно заканчивается. Основываясь на знаниях о перенаправлении потоков предложите способ обнуления открытого удаленного файла (чтобы освободить место на файловой системе).
+[Unit] 
+Description=Prometheus Node Exporter 
+After=network.target 
 
-
-Команда просмотра активных процессов с удаленными файлами
-```
-sudo lsof -a +L1
-```
-
-Чтобы очистить место на диске которое занимает удаленный файл
-```
-truncate -s 0 /proc/1366/fd/4
-```
-или
-```
-> /proc/1366/fd/4
-```
-Где 1366 номер процесса, а 4 номер файлового дескриптора
-
-4. Занимают ли зомби-процессы какие-то ресурсы в ОС (CPU, RAM, IO)?
+[Service] 
+Type=simple 
+ExecStart=/usr/bin/node_exporter
+EnvironmentFile=/etc/default/node_exporter
 
 
-Зомби не занимают ресурсы, но блокируют записи в таблице процессов, размер которой ограничен для каждого пользователя и системы в целом. Чтобы освободить запись, родительскому процессу нужно отправить системный вызов wait() 
-
-5. В iovisor BCC есть утилита opensnoop:
-```
-root@vagrant:~# dpkg -L bpfcc-tools | grep sbin/opensnoop
-/usr/sbin/opensnoop-bpfcc
-```
-На какие файлы вы увидели вызовы группы open за первую секунду работы утилиты? Воспользуйтесь пакетом bpfcc-tools для Ubuntu 20.04. Дополнительные сведения по установке.
-
-
-```
-root@netology:~# dpkg -L bpfcc-tools | grep sbin/opensnoop
-/usr/sbin/opensnoop-bpfcc
-root@netology:~# /usr/sbin/opensnoop-bpfcc
-PID    COMM               FD ERR PATH
-1      systemd            24   0 /proc/19094/cgroup
-631    irqbalance          6   0 /proc/interrupts
-631    irqbalance          6   0 /proc/stat
-631    irqbalance          6   0 /proc/irq/20/smp_affinity
-631    irqbalance          6   0 /proc/irq/0/smp_affinity
-631    irqbalance          6   0 /proc/irq/1/smp_affinity
-631    irqbalance          6   0 /proc/irq/8/smp_affinity
-631    irqbalance          6   0 /proc/irq/12/smp_affinity
-631    irqbalance          6   0 /proc/irq/14/smp_affinity
-631    irqbalance          6   0 /proc/irq/15/smp_affinity
-631    irqbalance          6   0 /proc/interrupts
-631    irqbalance          6   0 /proc/stat
+[Install] 
+WantedBy=multi-user.target
 ```
 
-6. Какой системный вызов использует uname -a? Приведите цитату из man по этому системному вызову, где описывается альтернативное местоположение в /proc, где можно узнать версию ядра и релиз ОС.
+поместите его в автозагрузку
+systemctl enable node_exporter.service
 
+предусмотрите возможность добавления опций к запускаемому процессу через внешний файл (посмотрите, например, на systemctl cat cron),
+```
+EXTRA_OPTS="--log.level=info --version"
+```
+
+удостоверьтесь, что с помощью systemctl процесс корректно стартует, завершается, а после перезагрузки автоматически поднимается.
+Проверил, после перезагрузки ВМ процесс корректно стартует, запускается автоматически. Завершается без ошибок
+```
+root@netology:~# systemctl status node_exporter.service
+● node_exporter.service - Prometheus Node Exporter
+     Loaded: loaded (/etc/systemd/system/node_exporter.service; enabled; vendor preset: enabled)
+     Active: inactive (dead) since Thu 2022-05-12 00:06:30 UTC; 2s ago
+    Process: 2203 ExecStart=/usr/bin/node_exporter $EXTRA_OPTS (code=exited, status=0/SUCCESS)
+   Main PID: 2203 (code=exited, status=0/SUCCESS)
+
+May 12 00:06:30 netology systemd[1]: Started Prometheus Node Exporter.
+May 12 00:06:30 netology node_exporter[2203]: node_exporter, version 1.3.1 (branch: HEAD, revision: a2321e7b940ddcff26873612bccdf7cd4c42b6b6)
+May 12 00:06:30 netology node_exporter[2203]:   build user:       root@243aafa5525c
+May 12 00:06:30 netology node_exporter[2203]:   build date:       20211205-11:09:49
+May 12 00:06:30 netology node_exporter[2203]:   go version:       go1.17.3
+May 12 00:06:30 netology node_exporter[2203]:   platform:         linux/amd64
+```
+
+2. Ознакомьтесь с опциями node_exporter и выводом /metrics по-умолчанию. Приведите несколько опций, которые вы бы выбрали для базового мониторинга хоста по CPU, памяти, диску и сети.
+```
+CPU 
+node_cpu_seconds_total{cpu="0",mode="idle"} 
+node_cpu_seconds_total{cpu="0",mode="iowait"}  
+node_cpu_seconds_total{cpu="0",mode="irq"} 
+node_cpu_seconds_total{cpu="0",mode="nice"} 
+node_cpu_seconds_total{cpu="0",mode="softirq"} 
+node_cpu_seconds_total{cpu="0",mode="steal"} 
+node_cpu_seconds_total{cpu="0",mode="system"} 
+node_cpu_seconds_total{cpu="0",mode="user"}  
+   
+RAM
+node_memory_MemAvailable_bytes
+node_memory_MemFree_bytes
+node_memory_MemTotal_bytes
+
+HDD
+node_disk_io_time_seconds_total{device="sda"} 
+node_disk_read_bytes_total{device="sda"} 
+node_disk_read_time_seconds_total{device="sda"} 
+node_disk_write_time_seconds_total{device="sda"}
+node_disk_discard_time_seconds_total{device="sda"}
+node_disk_written_bytes_total{device="sda"}
+node_disk_writes_completed_total{device="sda"}
+
+Networking
+node_network_carrier_up_changes_total{device="eth0"} 
+node_network_carrier_up_changes_total{device="eth1"}
+node_network_carrier_down_changes_total{device="eth0"} 
+node_network_carrier_down_changes_total{device="eth1"}
+node_network_carrier{device="eth0"} 
+node_network_carrier{device="eth1"}
+node_network_info{address="08:00:27:10:e3:d3",broadcast="ff:ff:ff:ff:ff:ff",device="eth1",duplex="full",ifalias="",operstate="up"} 
+node_network_info{address="08:00:27:b1:28:5d",broadcast="ff:ff:ff:ff:ff:ff",device="eth0",duplex="full",ifalias="",operstate="up"}
+node_network_receive_bytes_total{device="eth0"} 
+node_network_receive_bytes_total{device="eth1"}
+node_network_receive_drop_total{device="eth0"} 
+node_network_receive_drop_total{device="eth1"}
+node_network_receive_errs_total{device="eth0"} 
+node_network_receive_errs_total{device="eth1"}
+```
+
+
+3. Установите в свою виртуальную машину Netdata. Воспользуйтесь готовыми пакетами для установки (sudo apt install -y netdata). После успешной установки:
+
+	в конфигурационном файле /etc/netdata/netdata.conf в секции [web] замените значение с localhost на bind to = 0.0.0.0,
+	добавьте в Vagrantfile проброс порта Netdata на свой локальный компьютер и сделайте vagrant reload:
+```
+config.vm.network "forwarded_port", guest: 19999, host: 19999
+```
+
+После успешной перезагрузки в браузере на своем ПК (не в виртуальной машине) вы должны суметь зайти на localhost:19999. Ознакомьтесь с метриками, которые по умолчанию собираются Netdata и с комментариями, которые даны к этим метрикам.
+
+4. Можно ли по выводу dmesg понять, осознает ли ОС, что загружена не на настоящем оборудовании, а на системе виртуализации?
 
 ```
-Part of the utsname information is also accessible via /proc/sys/kernel/{ostype, hostname, osrelease, version, domainname}.
+vagrant@netology:~$ dmesg | grep -i virtual
+[    0.000000] DMI: innotek GmbH VirtualBox/VirtualBox, BIOS VirtualBox 12/01/2006
+[    0.008812] CPU MTRRs all blank - virtualized system.
+[    0.064297] Booting paravirtualized kernel on KVM
+[   21.664313] systemd[1]: Detected virtualization oracle.
 ```
 
-7. Чем отличается последовательность команд через ; и через && в bash? Например:
+5. Как настроен sysctl fs.nr_open на системе по-умолчанию? Узнайте, что означает этот параметр. Какой другой существующий лимит не позволит достичь такого числа (ulimit --help)?
+
+Этот параметр означает максимальное количество открытых файловых дескрипторов для системы, для юзера поменять на больше число невозможно. Число кратно 1024, 1024*1024 = 1048576
 ```
-root@netology1:~# test -d /tmp/some_dir; echo Hi
-Hi
-root@netology1:~# test -d /tmp/some_dir && echo Hi
-root@netology1:~#
+vagrant@netology:~$ /sbin/sysctl -n fs.nr_open
+1048576
 ```
-Есть ли смысл использовать в bash &&, если применить set -e?
 
-
-&&      логический оператор. Вторая команда будет выполняться только в том случае, если первая команда выполнена успешно, т. е. ее статус выхода равен нулю. Этот оператор можно использовать для проверки успешности выполнения первой команды
-Синтаксис
+лимит на пользователя можно посмотреть командой, его невозможно увеличить
 ```
-command1 && command2
+vagrant@vagrant:~$ ulimit -Hn
+1048576
 ```
-;      Разделитель последовательных команд. Он используется для выполнения нескольких команд за один раз. Выполнение команды, следующей за этим оператором, всегда будет выполняться после выполнения предыдущей команды, в независимости от состояния выхода предыдущей команды. Команды всегда выполняются последовательно. Статус возврата — это статус выхода последней выполненной команды.
 
-set -e   В случае ошибки, опция прерывает выполнение всех цепочки команды, кроме последней выполненной, по сути это аналог оператора &&, так как выполняют схожую последовательность действий.
+Максимальный лимит можно узнать командой:
+```
+vagrant@netology:~$ cat /proc/sys/fs/file-max
+9223372036854775807
+```
 
-8. Из каких опций состоит режим bash set -euxo pipefail и почему его хорошо было бы использовать в сценариях?
+6. Запустите любой долгоживущий процесс (не ls, который отработает мгновенно, а, например, sleep 1h) в отдельном неймспейсе процессов; покажите, что ваш процесс работает под PID 1 через nsenter. Для простоты работайте в данном задании под root (sudo -i). Под обычным пользователем требуются дополнительные опции (--map-root-user) и т.д.
 
+В первом tty запускаю процесс  в отдельном неймспейсе
+```
+root@netology:# unshare --fork --pid --mount-proc sleep 1h
+```
 
--e     В случае ошибки, опция прерывает выполнение всей цепочки команды, кроме последней выполненной (аналог &&)
--u     Влияет на переменные. Когда установлена ссылка на любую переменную, которую ранее не определили, за исключением $* и $@, является ошибкой и вызывает немедленный выход из программы.
--x     Включает режим оболочки, в котором все выполняемые команды выводятся на терминал
--o pipefail     Этот параметр предотвращает маскирование ошибок в конвейере. В случае сбоя какой-либо команды в конвейере этот код возврата будет использоваться как код возврата для всего конвейера.
+Во втором tty перехватываю данный процесс
+```
+root@netology:# ps -ef | grep sleep 
+root        2804    2803  0 09:50 pts/0    00:00:00 sleep 1h
 
-9. Используя -o stat для ps, определите, какой наиболее часто встречающийся статус у процессов в системе. В man ps ознакомьтесь (/PROCESS STATE CODES) что значат дополнительные к основной заглавной буквы статуса процессов. Его можно не учитывать при расчете (считать S, Ss или Ssl равнозначными)
+root@netology:~# nsenter --target 2804 --pid --mount 
+root@netology:/# ps aux 
+USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND 
+root           1  0.0  0.0   5476   580 pts/0    S+   09:50   0:00 sleep 1h 
+root           2  0.1  0.4   7236  4100 pts/1    S    09:52   0:00 -bash 
+root          13  0.0  0.3   8888  3448 pts/1    R+   09:52   0:00 ps aux
+```
 
+7. Найдите информацию о том, что такое :(){ :|:& };:. Запустите эту команду в своей виртуальной машине Vagrant с Ubuntu 20.04 (это важно, поведение в других ОС не проверялось). Некоторое время все будет "плохо", после чего (минуты) – ОС должна стабилизироваться. Вызов dmesg расскажет, какой механизм помог автоматической стабилизации. Как настроен этот механизм по-умолчанию, и как изменить число процессов, которое можно создать в сессии?
 
-Два наиболее распространенных статуса в столбце STAT: S - процессы в состоянии сна и R - процессы в состоянии выполнения. Спящий процесс — это процесс, который в данный момент не активен. Выполняемый процесс — это процесс, который в данный момент выполняется процессором.
+Форк-бомба — это форма атаки типа «отказ в обслуживании» (DoS) против системы на базе Linux или Unix. Она использует операцию форка.
+Данная команда -  функция bash. Она выполняется рекурсивно. Может использоваться системным администратором для проверки ограничений пользовательских процессов на сервере. Ограничения процессов Linux можно настроить с помощью /etc/security/limits.conf и PAM, чтобы избежать бомбы bash fork().
 
-Дополнительные буквы к основной заглавной статуса означают (перевёл смысл как смог):
-<    Процесс c высоким - приоритетом
-N     с низким приоритетом 
-L     имеет страницы, заблокированные в памяти (для реального времени и пользовательского ввода-вывода)
-s     является лидером сеанса
-l     Процесс является многопоточным
-+     находится в группе процессов на переднем плане
+Вызов dmesg
+```
+cgroup: fork rejected by pids controller in /user.slice/user-1000.slice/session-2.scope
+```
+
+pids controller - используется, чтобы позволить иерархии контрольной группы предотвратить любые новые задачи от fork() или clone() после достижения максимального количества процессов
+user.slice - место по умолчанию для всех пользовательских сессий. 
+
+ulimit -u    Данная команда покажет текущее максимальное количество процессов, которые пользователь может запустить в Linux
+
+Чтобы изменить это чисто нужно ввести команду 
+```
+ulimit -S -u 5000
+```
+
+где 5000 это количество процессов в сеансе пользователя
+Флаг -S     Мягкий лимит. Любой процесс может изменить мягкое ограничение.
+Флаг -u    Указывает, сколько процессов может создать пользователь.
