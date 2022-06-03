@@ -1,160 +1,222 @@
-1. Проверьте список доступных сетевых интерфейсов на вашем компьютере. Какие команды есть для этого в Linux и в Windows?
-В Linux использую команду ip a, если стоит NM то nmcli device status, но ip a универсален, он работает с любым сетевым пакетом
-В Windows использую ipconfig, если нужны mac адреса интерфейсов, то ipconfig /all
-
-2. Какой протокол используется для распознавания соседа по сетевому интерфейсу? Какой пакет и команды есть в Linux для этого?
-протокол LLDP, пакет используется lldpd и команды lldpcli show neighbors - показать соседей; lldpcli show neighbors eno160 - показать соседей на интерфейсe eno160,  lldpcli watch eno160 - следить за изменениями на интерфейсе eno160 и тд. список команд есть тут: http://manpages.ubuntu.com/manpages/trusty/man8/lldpcli.8.html
-
-3. Какая технология используется для разделения L2 коммутатора на несколько виртуальных сетей? Какой пакет и команды есть в Linux для этого? Приведите пример конфига.
-используется VLAN,  пакет vlan (apt install vlan), пример конфига:
-
-Создадим vlan 100 и навесим его на физический интерфейс eno160. а так же присвоим ему ip адрес
+1. Подключитесь к публичному маршрутизатору в интернет. Найдите маршрут к вашему публичному IP
 ```
-sudo ip link add link eth0 name eth0.100 type vlan id 100
-sudo ip addr add 192.168.100.2/24 dev eth0.100
-#ip a
-4: eth0.100@eth0: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN group default qlen 1000 
-    link/ether 08:00:27:b1:28:5d brd ff:ff:ff:ff:ff:ff 
-    inet 192.168.100.2/24 scope global eth0.100 
-       valid_lft forever preferred_lft forever
+telnet route-views.routeviews.org
+Username: rviews
+show ip route x.x.x.x/32
+show bgp x.x.x.x/32
+
 ```
 
-netplan
 ```
-network: 
-  version: 2  
- renderer: networkd
-  ethernets: 
-    eth0: 
-      addresses: 
-      - 172.16.1.50/24
-
-    vlans: 
-        eth0.100: 
-            id: 100 
-            link: eth0 
-            addresses: [192.168.100.2/24]
+route-views>show ip route 176.232.59.73 
+Routing entry for 176.232.56.0/22 
+  Known via "bgp 6447", distance 20, metric 10 
+  Tag 3257, type external 
+  Last update from 89.149.178.10 3w2d ago 
+  Routing Descriptor Blocks: 
+  * 89.149.178.10, from 89.149.178.10, 3w2d ago 
+      Route metric is 10, traffic share count is 1 
+      AS Hops 2 
+      Route tag 3257 
+      MPLS label: none
 ```
 
-4. Какие типы агрегации интерфейсов есть в Linux? Какие опции есть для балансировки нагрузки? Приведите пример конфига.
-
-Типы агрегации интерфейсов в Linux:
 ```
-Mode-0(balance-rr) – Данный режим используется по умолчанию. Balance-rr обеспечивается балансировку нагрузки и отказоустойчивость. В данном режиме сетевые пакеты отправляются “по кругу”, от первого интерфейса к последнему. Если выходят из строя интерфейсы, пакеты отправляются на остальные оставшиеся. Дополнительной настройки коммутатора не требуется при нахождении портов в одном коммутаторе. При разностных коммутаторах требуется дополнительная настройка.
-
-Mode-1(active-backup) – Один из интерфейсов работает в активном режиме, остальные в ожидающем. При обнаружении проблемы на активном интерфейсе производится переключение на ожидающий интерфейс. Не требуется поддержки от коммутатора.
-
-Mode-2(balance-xor) – Передача пакетов распределяется по типу входящего и исходящего трафика по формуле ((MAC src) XOR (MAC dest)) % число интерфейсов. Режим дает балансировку нагрузки и отказоустойчивость. Не требуется дополнительной настройки коммутатора/коммутаторов.
-
-Mode-3(broadcast) – Происходит передача во все объединенные интерфейсы, тем самым обеспечивая отказоустойчивость. Рекомендуется только для использования MULTICAST трафика.
-
-Mode-4(802.3ad) – динамическое объединение одинаковых портов. В данном режиме можно значительно увеличить пропускную способность входящего так и исходящего трафика. Для данного режима необходима поддержка и настройка коммутатора/коммутаторов.
-
-Mode-5(balance-tlb) – Адаптивная балансировки нагрузки трафика. Входящий трафик получается только активным интерфейсом, исходящий распределяется в зависимости от текущей загрузки канала каждого интерфейса. Не требуется специальной поддержки и настройки коммутатора/коммутаторов.
-
-Mode-6(balance-alb) – Адаптивная балансировка нагрузки. Отличается более совершенным алгоритмом балансировки нагрузки чем Mode-5). Обеспечивается балансировку нагрузки как исходящего так и входящего трафика. Не требуется специальной поддержки и настройки коммутатора/коммутаторов.
+route-views>show ip bgp 176.232.59.73 
+BGP routing table entry for 176.232.56.0/22, version 2285914994 
+Paths: (24 available, best #21, table default) 
+  Not advertised to any peer 
+  Refresh Epoch 1 
+  3333 1103 3257 34984 
+    193.0.0.56 from 193.0.0.56 (193.0.0.56) 
+      Origin IGP, localpref 100, valid, external 
+      Community: 3257:4000 3257:8989 3257:50001 3257:50111 3257:59000 3257:59002 
+      path 7FE132CE6518 RPKI State valid 
+      rx pathid: 0, tx pathid: 0 
+  Refresh Epoch 1 
+  8283 38930 3257 34984 
+    94.142.247.3 from 94.142.247.3 (94.142.247.3) 
+      Origin IGP, metric 0, localpref 100, valid, external 
+      Community: 8283:14 8283:102 
+      unknown transitive attribute: flag 0xE0 type 0x20 length 0x18 
+        value 0000 205B 0000 0005 0000 0002 0000 205B 
+              0000 0006 0000 000E 
+      path 7FE1046EC398 RPKI State valid 
+      rx pathid: 0, tx pathid: 0 
+  Refresh Epoch 1 
+  53767 174 174 3257 34984 
+    162.251.163.2 from 162.251.163.2 (162.251.162.3) 
+      Origin IGP, localpref 100, valid, external 
+      Community: 174:21000 174:22013 53767:5000 
+      path 7FE12DD93148 RPKI State valid 
+      rx pathid: 0, tx pathid: 0 
+  Refresh Epoch 1 
+  3549 3356 3257 34984 
+    208.51.134.254 from 208.51.134.254 (67.16.168.191) 
+      Origin IGP, metric 0, localpref 100, valid, external 
+      Community: 3257:3257 3356:3 3356:22 3356:86 3356:575 3356:666 3356:901 3356:2011 3549:2581 3549:30840 
+      path 7FE0A2A6E368 RPKI State valid 
+      rx pathid: 0, tx pathid: 0 
+  Refresh Epoch 1 
+  19214 3257 34984 
+    208.74.64.40 from 208.74.64.40 (208.74.64.40) 
+      Origin IGP, localpref 100, valid, external 
+      Community: 3257:4000 3257:8989 3257:50001 3257:50111 3257:59000 3257:59002 
+      path 7FE0D9BD11F0 RPKI State valid 
+      rx pathid: 0, tx pathid: 0 
+  Refresh Epoch 1 
+  701 3257 34984 
+    137.39.3.55 from 137.39.3.55 (137.39.3.55) 
+      Origin IGP, localpref 100, valid, external 
+      path 7FE0AEF33468 RPKI State valid 
+      rx pathid: 0, tx pathid: 0 
+  Refresh Epoch 1 
+  3356 3257 34984 
+    4.68.4.46 from 4.68.4.46 (4.69.184.201) 
+      Origin IGP, metric 0, localpref 100, valid, external 
+      Community: 3257:3257 3356:3 3356:86 3356:576 3356:666 3356:901 3356:2012 
+      path 7FE08D77EA28 RPKI State valid 
+      rx pathid: 0, tx pathid: 0 
+  Refresh Epoch 1 
+  3561 209 3356 3257 34984 
+    206.24.210.80 from 206.24.210.80 (206.24.210.80) 
+      Origin IGP, localpref 100, valid, external 
+      path 7FE0489A63A8 RPKI State valid 
+      rx pathid: 0, tx pathid: 0 
+  Refresh Epoch 1 
+  57866 6830 3257 34984 
+    37.139.139.17 from 37.139.139.17 (37.139.139.17) 
+      Origin IGP, metric 0, localpref 100, valid, external 
+      Community: 3257:3257 6830:17000 6830:17442 6830:33125 57866:501 
+      path 7FE037C85AB0 RPKI State valid 
+      rx pathid: 0, tx pathid: 0 
+  Refresh Epoch 1 
+  7018 3257 34984 
+    12.0.1.63 from 12.0.1.63 (12.0.1.63) 
+      Origin IGP, localpref 100, valid, external 
+      Community: 7018:5000 7018:37232 
+      path 7FE04FE73B38 RPKI State valid 
+      rx pathid: 0, tx pathid: 0 
+  Refresh Epoch 1 
+  4901 6079 3257 34984 
+    162.250.137.254 from 162.250.137.254 (162.250.137.254) 
+      Origin IGP, localpref 100, valid, external 
+      Community: 65000:10100 65000:10300 65000:10400 
+      path 7FE0FA47CDE8 RPKI State valid 
+      rx pathid: 0, tx pathid: 0 
+  Refresh Epoch 1 
+  20912 3257 34984 
+    212.66.96.126 from 212.66.96.126 (212.66.96.126) 
+      Origin IGP, localpref 100, valid, external 
+      Community: 3257:4000 3257:8989 3257:50001 3257:50111 3257:59000 3257:59002 20912:65004 
+      path 7FE0D9E7CF98 RPKI State valid 
+      rx pathid: 0, tx pathid: 0 
+  Refresh Epoch 1 
+  3267 1299 3257 34984 
+    194.85.40.15 from 194.85.40.15 (185.141.126.1) 
+      Origin IGP, metric 0, localpref 100, valid, external 
+      path 7FE15079FB98 RPKI State valid 
+      rx pathid: 0, tx pathid: 0 
+  Refresh Epoch 1 
+  49788 1299 3257 34984 
+    91.218.184.60 from 91.218.184.60 (91.218.184.60) 
+      Origin IGP, localpref 100, valid, external 
+      Community: 1299:20000 
+      Extended Community: 0x43:100:1 
+      path 7FE10E491D70 RPKI State valid 
+      rx pathid: 0, tx pathid: 0 
+  Refresh Epoch 1 
+  20130 23352 3257 34984 
+    140.192.8.16 from 140.192.8.16 (140.192.8.16) 
+      Origin IGP, localpref 100, valid, external 
+      path 7FE15FA70E20 RPKI State valid 
+      rx pathid: 0, tx pathid: 0 
+  Refresh Epoch 1 
+  101 174 3257 34984 
+    209.124.176.223 from 209.124.176.223 (209.124.176.223) 
+      Origin IGP, localpref 100, valid, external 
+      Community: 101:20100 101:20110 101:22100 174:21000 174:22013 
+      Extended Community: RT:101:22100 
+      path 7FE030E97988 RPKI State valid 
+      rx pathid: 0, tx pathid: 0 
+  Refresh Epoch 1 
+  852 3257 34984 
+    154.11.12.212 from 154.11.12.212 (96.1.209.43) 
+      Origin IGP, metric 0, localpref 100, valid, external 
+      path 7FE0D63DA298 RPKI State valid 
+      rx pathid: 0, tx pathid: 0 
+  Refresh Epoch 1 
+  1351 6939 1299 3257 34984 
+    132.198.255.253 from 132.198.255.253 (132.198.255.253) 
+      Origin IGP, localpref 100, valid, external 
+      path 7FE179E542E8 RPKI State valid 
+      rx pathid: 0, tx pathid: 0 
+  Refresh Epoch 1 
+  3303 3257 34984 
+    217.192.89.50 from 217.192.89.50 (138.187.128.158) 
+      Origin IGP, localpref 100, valid, external 
+      Community: 3257:3257 3303:1004 3303:1006 3303:1030 3303:3067 
+      path 7FE08B981CC0 RPKI State valid 
+      rx pathid: 0, tx pathid: 0 
+  Refresh Epoch 1 
+  6939 1299 3257 34984 
+    64.71.137.241 from 64.71.137.241 (216.218.252.164) 
+      Origin IGP, localpref 100, valid, external 
+      path 7FE0ECDD8CA8 RPKI State valid 
+      rx pathid: 0, tx pathid: 0 
+  Refresh Epoch 1 
+  3257 34984 
+    89.149.178.10 from 89.149.178.10 (213.200.83.26) 
+      Origin IGP, metric 10, localpref 100, valid, external, best 
+      Community: 3257:4000 3257:8989 3257:50001 3257:50111 3257:59000 3257:59002 
+      path 7FE118B155A8 RPKI State valid 
+      rx pathid: 0, tx pathid: 0x0 
+  Refresh Epoch 2 
+  2497 3257 34984 
+    202.232.0.2 from 202.232.0.2 (58.138.96.254) 
+      Origin IGP, localpref 100, valid, external 
+      path 7FE0B48312E8 RPKI State valid 
+      rx pathid: 0, tx pathid: 0 
+  Refresh Epoch 1 
+  7660 2516 3257 34984 
+    203.181.248.168 from 203.181.248.168 (203.181.248.168) 
+      Origin IGP, localpref 100, valid, external 
+      Community: 2516:1030 7660:9001 
+      path 7FE162E1DF50 RPKI State valid 
+      rx pathid: 0, tx pathid: 0 
+  Refresh Epoch 1 
+  1221 4637 3257 34984 
+    203.62.252.83 from 203.62.252.83 (203.62.252.83) 
+      Origin IGP, localpref 100, valid, external 
+      path 7FE14661BBE8 RPKI State valid 
+      rx pathid: 0, tx pathid: 0
 ```
 
-Опции:
+2. Создайте dummy0 интерфейс в Ubuntu. Добавьте несколько статических маршрутов. Проверьте таблицу маршрутизации.
+
+https://ixnfo.com/en/creating-dummy-interfaces-on-linux.html
+
+3. Проверьте открытые TCP порты в Ubuntu, какие протоколы и приложения используют эти порты? Приведите несколько примеров.
 ```
-ad_select — определяет логику выбора для агрегации по стандарту 802.3ad
-arp_interval — определяет ARP мониторинг канала
-arp_ip_target — Указывает IP адреса для ARP мониторинга
-arp_validate — Определяет будут или нет проверяться ARP запросы и ответы при использовании режима active-backup
-downdelay — Определяет время (в миллисекундах) задержки перед отключением интерфейса, если произошел сбой соединения
-fail_over_mac — Определяет как будут прописываться MAC адреса на объединенных интерфейсах в режиме active-backup при переключении интерфейсов
-lacp_rate — Определяет с каким интервалом будут передаваться партнёром LACPDU пакеты в режиме 802.3a
-max_bonds — Указывает сколько bonding устройств следует создавать драйверу
-miimon — Устанавливает периодичность MII мониторинга в миллисекундах
-num_grat_arp и num_unsol_na — Указывает количество оповещений, отправляемых соседним пирам после возникновения события отказа
-primary — Указывает какой интерфейс будет первичным
-primary_reselect — Определяет как будет производиться возвращение на первичный интерфейс, после возобновления его работоспособности
-updelay — Задает время задержки в миллисекундах, перед тем как поднять линк при обнаружении восстановления канала
-use_carrier — Указывает как miimon будет определять состояние линии, используя контроль ввода-вывода
-xmit_hash_policy — Определяет хэш политику передачи пакетов через объединенные интерфейсы в режиме balance-xor или 802.3ad
-resend_igmp — Указывает какое количество отчетов о принадлежности группе (IGMP membership) отсылать при возникновении события отказа
+vagrant@netology:~$ sudo ss -nltp
+State           Recv-Q          Send-Q                   Local Address:Port                    Peer Address:Port         Process
+LISTEN          0               4096                           0.0.0.0:19999                        0.0.0.0:*             users:(("netdata",pid=644,fd=5))
+LISTEN          0               4096                     127.0.0.53%lo:53                           0.0.0.0:*             users:(("systemd-resolve",pid=610,fd=13))
+LISTEN          0               128                            0.0.0.0:22                           0.0.0.0:*             users:(("sshd",pid=693,fd=3))
+LISTEN          0               4096                         127.0.0.1:8125                         0.0.0.0:*             users:(("netdata",pid=644,fd=61))
+LISTEN          0               4096                              [::]:19999                           [::]:*             users:(("netdata",pid=644,fd=6))
+LISTEN          0               128                               [::]:22                              [::]:*             users:(("sshd",pid=693,fd=4))
 ```
 
-Пример конфига:
+4. Проверьте используемые UDP сокеты в Ubuntu, какие протоколы и приложения используют эти порты?
 ```
-network: 
- version: 2 
- renderer: networkd 
- ethernets: 
-   eports: 
-     match:  
-       name: ens* 
- bonds: 
-   bond0: 
-     interfaces: [eports] 
-     addresses: [10.1.1.10/24] 
-     gateway4: 10.1.1.1 
-     nameservers: 
-       search: [local] 
-       addresses: [4.2.2.2] 
-     parameters: 
-       mode: 802.3ad 
-       lacp-rate: fast 
-       mii-monitor-interval: 100
+vagrant@netology:~$ sudo ss -nlup
+State           Recv-Q          Send-Q                    Local Address:Port                   Peer Address:Port         Process
+UNCONN          0               0                             127.0.0.1:8125                        0.0.0.0:*             users:(("netdata",pid=644,fd=56))
+UNCONN          0               0                         127.0.0.53%lo:53                          0.0.0.0:*             users:(("systemd-resolve",pid=610,fd=12))
+UNCONN          0               0                        10.0.2.15%eth0:68                          0.0.0.0:*             users:(("systemd-network",pid=608,fd=21))
 ```
 
-5. Сколько IP адресов в сети с маской /29 ? Сколько /29 подсетей можно получить из сети с маской /24. Приведите несколько примеров /29 подсетей внутри сети 10.10.10.0/24.
-В сети с маской /29 6 IP адресов
-В сети с /24 маской можно получить 32 сети с /29 маской (Количество хостов в подсети = 2n-2, где n – это количество свободных бит в порции хоста, а «-2» - это вычет адреса сети и широковещательного адреса)
-5 примеров в сети 10.10.10.0/24:
-```
-1. 
-Сеть:           10.10.10.0/29 
-Хост(min):	10.10.10.1	 
-Хост(max):	10.10.10.6	 
-Broadcast:	10.10.10.7	 
-2. 
-Сеть:           10.10.10.8/29        	 
-Хост(min):	10.10.10.9	 
-Хост(max):	10.10.10.14	 
-Broadcast:	10.10.10.15	 
-3. 
-Сеть:           10.10.10.16/29       	
-Хост(min):	10.10.10.17	 
-Хост(max):	10.10.10.22	 
-Broadcast:	10.10.10.23	 
-4. 
-Сеть:           10.10.10.24/29       
-Хост(min):	10.10.10.25	 
-Хост(max):	10.10.10.30	 
-Broadcast:	10.10.10.31	 
-5. 
-Сеть:       	10.10.10.32/29       	 
-Хост(min):	10.10.10.33	 
-Хост(max):	10.10.10.38	 
-Broadcast:	10.10.10.39	 
-```
+5. Используя diagrams.net, создайте L3 диаграмму вашей домашней сети или любой другой сети, с которой вы работали.
 
-6. Задача: вас попросили организовать стык между 2-мя организациями. Диапазоны 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16 уже заняты. Из какой подсети допустимо взять частные IP адреса? Маску выберите из расчета максимум 40-50 хостов внутри подсети.
-
-Начну с теории. есть BOGON сети, зарезервированные для различных нужд:
-```
-0.0.0.0/8
-127.0.0.0/8
-10.0.0.0/8
-172.16.0.0/12
-192.168.0.0/16
-169.254.0.0/16
-100.64.0.0/10
-192.0.0.0/24
-192.0.2.0/24
-198.51.100.0/24
-203.0.113.0/24
-192.88.99.0/24
-198.18.0.0/15
-224.0.0.0/4
-240.0.0.0/4
-```
-Из всего списка для частных сетей рекомендуется использовать только 3 диапазона 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, но условию задачи они заняты. 
-
-Я отвечу, что из других сетей, которые не маршрутизируются в глобальной сети, ничего взять не получится, по крайней мере это моветон. Но может быть я чего то не знаю и вы мне откроете глаза:)
-
-7. Как проверить ARP таблицу в Linux, Windows? Как очистить ARP кеш полностью? Как из ARP таблицы удалить только один нужный IP?
-В Windows: arp -a просмотр, ipconfig /flushdns очистка
-В Linux: arp -a просмотр (если установлен пакет net-tools), ip -s -s neigh flush all очистка
-
+Прикрепил файл к ЛК
