@@ -194,7 +194,22 @@ Paths: (24 available, best #21, table default)
 
 2. Создайте dummy0 интерфейс в Ubuntu. Добавьте несколько статических маршрутов. Проверьте таблицу маршрутизации.
 
-https://ixnfo.com/en/creating-dummy-interfaces-on-linux.html
+```
+vagrant@netology:~$ sudo modprobe -v dummy numdummies=1 
+insmod /lib/modules/5.4.0-110-generic/kernel/drivers/net/dummy.ko numdummies=0 numdummies=1
+
+vagrant@netology:~$ ip a | grep dummy
+4: dummy0: <BROADCAST,NOARP> mtu 1500 qdisc noop state DOWN group default qlen 1000
+
+vagrant@netology:~$ sudo ip link set dummy0 up
+
+vagrant@netology:~$ sudo ip addr add 192.168.1.150/24 dev dummy0
+vagrant@netology:~$ sudo ip route add 0.0.0.0/0 via 192.168.1.150
+
+vagrant@netology:~$ ip r | grep dummy
+default via 192.168.1.150 dev dummy0
+192.168.1.0/24 dev dummy0 proto kernel scope link src 192.168.1.150
+```
 
 3. Проверьте открытые TCP порты в Ubuntu, какие протоколы и приложения используют эти порты? Приведите несколько примеров.
 ```
