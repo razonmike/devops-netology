@@ -1,237 +1,230 @@
-1. Подключитесь к публичному маршрутизатору в интернет. Найдите маршрут к вашему публичному IP
-```
-telnet route-views.routeviews.org
-Username: rviews
-show ip route x.x.x.x/32
-show bgp x.x.x.x/32
+1. Установите Bitwarden плагин для браузера. Зарегестрируйтесь и сохраните несколько паролей.
 
-```
+Добавил скрин к ДЗ
 
+2. Установите Google authenticator на мобильный телефон. Настройте вход в Bitwarden акаунт через Google authenticator OTP.
+
+Добавил скрин к ДЗ
+
+3. Установите apache2, сгенерируйте самоподписанный сертификат, настройте тестовый сайт для работы по HTTPS.
+Вот так я сгенерировал серт:
 ```
-route-views>show ip route 176.232.59.73 
-Routing entry for 176.232.56.0/22 
-  Known via "bgp 6447", distance 20, metric 10 
-  Tag 3257, type external 
-  Last update from 89.149.178.10 3w2d ago 
-  Routing Descriptor Blocks: 
-  * 89.149.178.10, from 89.149.178.10, 3w2d ago 
-      Route metric is 10, traffic share count is 1 
-      AS Hops 2 
-      Route tag 3257 
-      MPLS label: none
+mkdir /etc/apache2/certificate 
+cd /etc/apache2/certificate 
+openssl req -new -newkey rsa:4096 -x509 -sha256 -days 365 -nodes -out apache-certificate.crt -keyout apache.key
 ```
 
+И приложу содержимое конфига и внутренности html страницы, всё это работает:
 ```
-route-views>show ip bgp 176.232.59.73 
-BGP routing table entry for 176.232.56.0/22, version 2285914994 
-Paths: (24 available, best #21, table default) 
-  Not advertised to any peer 
-  Refresh Epoch 1 
-  3333 1103 3257 34984 
-    193.0.0.56 from 193.0.0.56 (193.0.0.56) 
-      Origin IGP, localpref 100, valid, external 
-      Community: 3257:4000 3257:8989 3257:50001 3257:50111 3257:59000 3257:59002 
-      path 7FE132CE6518 RPKI State valid 
-      rx pathid: 0, tx pathid: 0 
-  Refresh Epoch 1 
-  8283 38930 3257 34984 
-    94.142.247.3 from 94.142.247.3 (94.142.247.3) 
-      Origin IGP, metric 0, localpref 100, valid, external 
-      Community: 8283:14 8283:102 
-      unknown transitive attribute: flag 0xE0 type 0x20 length 0x18 
-        value 0000 205B 0000 0005 0000 0002 0000 205B 
-              0000 0006 0000 000E 
-      path 7FE1046EC398 RPKI State valid 
-      rx pathid: 0, tx pathid: 0 
-  Refresh Epoch 1 
-  53767 174 174 3257 34984 
-    162.251.163.2 from 162.251.163.2 (162.251.162.3) 
-      Origin IGP, localpref 100, valid, external 
-      Community: 174:21000 174:22013 53767:5000 
-      path 7FE12DD93148 RPKI State valid 
-      rx pathid: 0, tx pathid: 0 
-  Refresh Epoch 1 
-  3549 3356 3257 34984 
-    208.51.134.254 from 208.51.134.254 (67.16.168.191) 
-      Origin IGP, metric 0, localpref 100, valid, external 
-      Community: 3257:3257 3356:3 3356:22 3356:86 3356:575 3356:666 3356:901 3356:2011 3549:2581 3549:30840 
-      path 7FE0A2A6E368 RPKI State valid 
-      rx pathid: 0, tx pathid: 0 
-  Refresh Epoch 1 
-  19214 3257 34984 
-    208.74.64.40 from 208.74.64.40 (208.74.64.40) 
-      Origin IGP, localpref 100, valid, external 
-      Community: 3257:4000 3257:8989 3257:50001 3257:50111 3257:59000 3257:59002 
-      path 7FE0D9BD11F0 RPKI State valid 
-      rx pathid: 0, tx pathid: 0 
-  Refresh Epoch 1 
-  701 3257 34984 
-    137.39.3.55 from 137.39.3.55 (137.39.3.55) 
-      Origin IGP, localpref 100, valid, external 
-      path 7FE0AEF33468 RPKI State valid 
-      rx pathid: 0, tx pathid: 0 
-  Refresh Epoch 1 
-  3356 3257 34984 
-    4.68.4.46 from 4.68.4.46 (4.69.184.201) 
-      Origin IGP, metric 0, localpref 100, valid, external 
-      Community: 3257:3257 3356:3 3356:86 3356:576 3356:666 3356:901 3356:2012 
-      path 7FE08D77EA28 RPKI State valid 
-      rx pathid: 0, tx pathid: 0 
-  Refresh Epoch 1 
-  3561 209 3356 3257 34984 
-    206.24.210.80 from 206.24.210.80 (206.24.210.80) 
-      Origin IGP, localpref 100, valid, external 
-      path 7FE0489A63A8 RPKI State valid 
-      rx pathid: 0, tx pathid: 0 
-  Refresh Epoch 1 
-  57866 6830 3257 34984 
-    37.139.139.17 from 37.139.139.17 (37.139.139.17) 
-      Origin IGP, metric 0, localpref 100, valid, external 
-      Community: 3257:3257 6830:17000 6830:17442 6830:33125 57866:501 
-      path 7FE037C85AB0 RPKI State valid 
-      rx pathid: 0, tx pathid: 0 
-  Refresh Epoch 1 
-  7018 3257 34984 
-    12.0.1.63 from 12.0.1.63 (12.0.1.63) 
-      Origin IGP, localpref 100, valid, external 
-      Community: 7018:5000 7018:37232 
-      path 7FE04FE73B38 RPKI State valid 
-      rx pathid: 0, tx pathid: 0 
-  Refresh Epoch 1 
-  4901 6079 3257 34984 
-    162.250.137.254 from 162.250.137.254 (162.250.137.254) 
-      Origin IGP, localpref 100, valid, external 
-      Community: 65000:10100 65000:10300 65000:10400 
-      path 7FE0FA47CDE8 RPKI State valid 
-      rx pathid: 0, tx pathid: 0 
-  Refresh Epoch 1 
-  20912 3257 34984 
-    212.66.96.126 from 212.66.96.126 (212.66.96.126) 
-      Origin IGP, localpref 100, valid, external 
-      Community: 3257:4000 3257:8989 3257:50001 3257:50111 3257:59000 3257:59002 20912:65004 
-      path 7FE0D9E7CF98 RPKI State valid 
-      rx pathid: 0, tx pathid: 0 
-  Refresh Epoch 1 
-  3267 1299 3257 34984 
-    194.85.40.15 from 194.85.40.15 (185.141.126.1) 
-      Origin IGP, metric 0, localpref 100, valid, external 
-      path 7FE15079FB98 RPKI State valid 
-      rx pathid: 0, tx pathid: 0 
-  Refresh Epoch 1 
-  49788 1299 3257 34984 
-    91.218.184.60 from 91.218.184.60 (91.218.184.60) 
-      Origin IGP, localpref 100, valid, external 
-      Community: 1299:20000 
-      Extended Community: 0x43:100:1 
-      path 7FE10E491D70 RPKI State valid 
-      rx pathid: 0, tx pathid: 0 
-  Refresh Epoch 1 
-  20130 23352 3257 34984 
-    140.192.8.16 from 140.192.8.16 (140.192.8.16) 
-      Origin IGP, localpref 100, valid, external 
-      path 7FE15FA70E20 RPKI State valid 
-      rx pathid: 0, tx pathid: 0 
-  Refresh Epoch 1 
-  101 174 3257 34984 
-    209.124.176.223 from 209.124.176.223 (209.124.176.223) 
-      Origin IGP, localpref 100, valid, external 
-      Community: 101:20100 101:20110 101:22100 174:21000 174:22013 
-      Extended Community: RT:101:22100 
-      path 7FE030E97988 RPKI State valid 
-      rx pathid: 0, tx pathid: 0 
-  Refresh Epoch 1 
-  852 3257 34984 
-    154.11.12.212 from 154.11.12.212 (96.1.209.43) 
-      Origin IGP, metric 0, localpref 100, valid, external 
-      path 7FE0D63DA298 RPKI State valid 
-      rx pathid: 0, tx pathid: 0 
-  Refresh Epoch 1 
-  1351 6939 1299 3257 34984 
-    132.198.255.253 from 132.198.255.253 (132.198.255.253) 
-      Origin IGP, localpref 100, valid, external 
-      path 7FE179E542E8 RPKI State valid 
-      rx pathid: 0, tx pathid: 0 
-  Refresh Epoch 1 
-  3303 3257 34984 
-    217.192.89.50 from 217.192.89.50 (138.187.128.158) 
-      Origin IGP, localpref 100, valid, external 
-      Community: 3257:3257 3303:1004 3303:1006 3303:1030 3303:3067 
-      path 7FE08B981CC0 RPKI State valid 
-      rx pathid: 0, tx pathid: 0 
-  Refresh Epoch 1 
-  6939 1299 3257 34984 
-    64.71.137.241 from 64.71.137.241 (216.218.252.164) 
-      Origin IGP, localpref 100, valid, external 
-      path 7FE0ECDD8CA8 RPKI State valid 
-      rx pathid: 0, tx pathid: 0 
-  Refresh Epoch 1 
-  3257 34984 
-    89.149.178.10 from 89.149.178.10 (213.200.83.26) 
-      Origin IGP, metric 10, localpref 100, valid, external, best 
-      Community: 3257:4000 3257:8989 3257:50001 3257:50111 3257:59000 3257:59002 
-      path 7FE118B155A8 RPKI State valid 
-      rx pathid: 0, tx pathid: 0x0 
-  Refresh Epoch 2 
-  2497 3257 34984 
-    202.232.0.2 from 202.232.0.2 (58.138.96.254) 
-      Origin IGP, localpref 100, valid, external 
-      path 7FE0B48312E8 RPKI State valid 
-      rx pathid: 0, tx pathid: 0 
-  Refresh Epoch 1 
-  7660 2516 3257 34984 
-    203.181.248.168 from 203.181.248.168 (203.181.248.168) 
-      Origin IGP, localpref 100, valid, external 
-      Community: 2516:1030 7660:9001 
-      path 7FE162E1DF50 RPKI State valid 
-      rx pathid: 0, tx pathid: 0 
-  Refresh Epoch 1 
-  1221 4637 3257 34984 
-    203.62.252.83 from 203.62.252.83 (203.62.252.83) 
-      Origin IGP, localpref 100, valid, external 
-      path 7FE14661BBE8 RPKI State valid 
-      rx pathid: 0, tx pathid: 0
+<VirtualHost *:443> 
+        # The ServerName directive sets the request scheme, hostname and port that 
+        # the server uses to identify itself. This is used when creating 
+        # redirection URLs. In the context of virtual hosts, the ServerName 
+        # specifies what hostname must appear in the request's Host: header to 
+        # match this virtual host. For the default virtual host (this file) this 
+        # value is not decisive as it is used as a last resort host regardless. 
+        # However, you must set it for any further virtual host explicitly. 
+        #ServerName www.example.com 
+        ServerAdmin razonmike@gmail.com 
+        DocumentRoot /var/www/gci 
+        ServerName gci.example.com 
+        ServerAlias www.gci.example.com 
+        DocumentRoot /var/www/gci 
+        # Available loglevels: trace8, ..., trace1, debug, info, notice, warn, 
+        # error, crit, alert, emerg. 
+        # It is also possible to configure the loglevel for particular 
+        # modules, e.g. 
+        #LogLevel info ssl:warn 
+        ErrorLog ${APACHE_LOG_DIR}/error.log 
+        CustomLog ${APACHE_LOG_DIR}/access.log combined 
+        SSLEngine on 
+        SSLCertificateFile /etc/apache2/certificate/apache-certificate.crt 
+        SSLCertificateKeyFile /etc/apache2/certificate/apache.key 
+        # For most configuration files from conf-available/, which are 
+        # enabled or disabled at a global level, it is possible to 
+        # include a line for only one particular virtual host. For example the 
+        # following line enables the CGI configuration for this host only 
+        # after it has been globally disabled with "a2disconf". 
+        #Include conf-available/serve-cgi-bin.conf 
+</VirtualHost>
 ```
 
-2. Создайте dummy0 интерфейс в Ubuntu. Добавьте несколько статических маршрутов. Проверьте таблицу маршрутизации.
-
 ```
-vagrant@netology:~$ sudo modprobe -v dummy numdummies=1 
-insmod /lib/modules/5.4.0-110-generic/kernel/drivers/net/dummy.ko numdummies=0 numdummies=1
-
-vagrant@netology:~$ ip a | grep dummy
-4: dummy0: <BROADCAST,NOARP> mtu 1500 qdisc noop state DOWN group default qlen 1000
-
-vagrant@netology:~$ sudo ip link set dummy0 up
-
-vagrant@netology:~$ sudo ip addr add 192.168.1.150/24 dev dummy0
-vagrant@netology:~$ sudo ip route add 0.0.0.0/0 via 192.168.1.150
-
-vagrant@netology:~$ ip r | grep dummy
-default via 192.168.1.150 dev dummy0
-192.168.1.0/24 dev dummy0 proto kernel scope link src 192.168.1.150
+<html> 
+<head> 
+  <title> Netology </title> 
+</head> 
+<body> 
+  <p> I'm running this website for netology DevOps course 
+</body> 
+</html>
 ```
 
-3. Проверьте открытые TCP порты в Ubuntu, какие протоколы и приложения используют эти порты? Приведите несколько примеров.
+4. Проверьте на TLS уязвимости произвольный сайт в интернете (кроме сайтов МВД, ФСБ, МинОбр, НацБанк, РосКосмос, РосАтом, РосНАНО и любых госкомпаний, объектов КИИ, ВПК ... и тому подобное).
+
+Проверил на сервисе www.digicert.com
 ```
-vagrant@netology:~$ sudo ss -nltp
-State           Recv-Q          Send-Q                   Local Address:Port                    Peer Address:Port         Process
-LISTEN          0               4096                           0.0.0.0:19999                        0.0.0.0:*             users:(("netdata",pid=644,fd=5))
-LISTEN          0               4096                     127.0.0.53%lo:53                           0.0.0.0:*             users:(("systemd-resolve",pid=610,fd=13))
-LISTEN          0               128                            0.0.0.0:22                           0.0.0.0:*             users:(("sshd",pid=693,fd=3))
-LISTEN          0               4096                         127.0.0.1:8125                         0.0.0.0:*             users:(("netdata",pid=644,fd=61))
-LISTEN          0               4096                              [::]:19999                           [::]:*             users:(("netdata",pid=644,fd=6))
-LISTEN          0               128                               [::]:22                              [::]:*             users:(("sshd",pid=693,fd=4))
+DNS разрешает netology.ru в 172.67.21.207 
+Заголовок HTTP-сервера: cloudflare 
+TLS-сертификат 
+Общее название = netology.ru 
+Организация = Cloudflare, Inc. 
+Город/населенный пункт = Сан-Франциско 
+Штат/провинция = Калифорния 
+Страна = США 
+Альтернативные имена субъекта = netology.ru, *.netology.ru 
+Эмитент = Cloudflare Inc ECC CA-3 
+Серийный номер = 0D4ECEE387AD78CF71CB53B10F6C1692 
+Отпечаток SHA1 = 8BF9DC4CF2E2314801D3AE71CC0A6627D1E4231B 
+Длина ключа = 256 
+Алгоритм подписи = ECDSA-SHA256 
+Безопасное повторное согласование: 
+Сертификат TLS не был отозван 
+Скрепка OCSP:	Хороший 
+Происхождение ОССП:	Хороший 
+CRL-статус:	Хороший 
+Срок действия сертификата TLS 
+Срок действия сертификата истекает 2 марта 2023 г. (271 день с сегодняшнего дня) 
+Имя сертификата совпадает с netology.ru 
+Предмет	netology.ru 
+Действительно с 02.03.2022 по 02.03.2023 
+Эмитент	Cloudflare Inc ECC CA-3 
+Предмет	Cloudflare Inc ECC CA-3 
+Действительно с 27 января 2020 г. по 31 декабря 2024 г. 
+Эмитент	Балтимор CyberTrust Root 
+Сертификат TLS установлен правильно 
+Поздравляем! Этот сертификат установлен правильно.
 ```
 
-4. Проверьте используемые UDP сокеты в Ubuntu, какие протоколы и приложения используют эти порты?
+5. Установите на Ubuntu ssh сервер, сгенерируйте новый приватный ключ. Скопируйте свой публичный ключ на другой сервер. Подключитесь к серверу по SSH-ключу.
 ```
-vagrant@netology:~$ sudo ss -nlup
-State           Recv-Q          Send-Q                    Local Address:Port                   Peer Address:Port         Process
-UNCONN          0               0                             127.0.0.1:8125                        0.0.0.0:*             users:(("netdata",pid=644,fd=56))
-UNCONN          0               0                         127.0.0.53%lo:53                          0.0.0.0:*             users:(("systemd-resolve",pid=610,fd=12))
-UNCONN          0               0                        10.0.2.15%eth0:68                          0.0.0.0:*             users:(("systemd-network",pid=608,fd=21))
+vagrant@netology:~$ ssh-keygen -t rsa -b 4096 
+Generating public/private rsa key pair. 
+Enter file in which to save the key (/home/vagrant/.ssh/id_rsa): 
+Enter passphrase (empty for no passphrase): 
+Enter same passphrase again: 
+Your identification has been saved in /home/vagrant/.ssh/id_rsa 
+Your public key has been saved in /home/vagrant/.ssh/id_rsa.pub 
+The key fingerprint is: 
+SHA256:Kanh5t0FO+//HyMAx9CkfA1nZtm3MhFKVUFDHWAB9P8 vagrant@netology 
+The key's randomart image is: 
++---[RSA 4096]----+ 
+|         .+*o@XB+| 
+|        . =.@o .+| 
+|         + = o. o| 
+|       . .+  o.. | 
+|    . o S  .  o. | 
+|   . o . o  .   .| 
+|    +   o .  . oE| 
+|   o . . +    . o| 
+|    . . ..o......| 
++----[SHA256]-----+
+vagrant@netology:~$ ssh-copy-id vagrant@172.16.1.52 
+/usr/bin/ssh-copy-id: INFO: Source of key(s) to be installed: "/home/vagrant/.ssh/id_rsa.pub" 
+The authenticity of host '172.16.1.52 (172.16.1.52)' can't be established. 
+ECDSA key fingerprint is SHA256:RztZ38lZsUpiN3mQrXHa6qtsUgsttBXWJibL2nAiwdQ. 
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes 
+/usr/bin/ssh-copy-id: INFO: attempting to log in with the new key(s), to filter out any that are already installed 
+/usr/bin/ssh-copy-id: INFO: 1 key(s) remain to be installed -- if you are prompted now it is to install the new keys 
+vagrant@172.16.1.52's password: 
+Number of key(s) added: 1 
+Now try logging into the machine, with:   "ssh 'vagrant@172.16.1.52'" 
+and check to make sure that only the key(s) you wanted were added.
+vagrant@netology:~$ ssh vagrant@172.16.1.52 
+Enter passphrase for key '/home/vagrant/.ssh/id_rsa': 
+Welcome to Ubuntu 20.04.3 LTS (GNU/Linux 5.4.0-91-generic x86_64)
 ```
 
-5. Используя diagrams.net, создайте L3 диаграмму вашей домашней сети или любой другой сети, с которой вы работали.
+6. Переименуйте файлы ключей из задания 5. Настройте файл конфигурации SSH клиента, так чтобы вход на удаленный сервер осуществлялся по имени сервера.
+Переименуем файлы ключей
+```
+vagrant@netology:~/.ssh$ mv id_rsa.pub id_rsa1.pub &&mv id_rsa1 id_rsa1
+```
 
-Прикрепил файл к ЛК
+Настройки на клиенте для подключения по имени и с указанием новых имен ключей. Подключение работает
+```
+vim .ssh/config
+
+Host server
+    HostName 172.16.1.51
+    User vagrant
+    PubkeyAuthentication yes
+    IdentityFile ~/.ssh/id_rsa1
+    IdentityFile ~/.ssh/id_rsa1.pub
+
+sudo systemctl restart ssh
+
+ssh server
+```
+
+7. Соберите дамп трафика утилитой tcpdump в формате pcap, 100 пакетов. Откройте файл pcap в Wireshark.
+```
+sudo tcpdump -c 100 > output.pcap
+```
+
+Далее скачал это файл, в Wireshark открыл File - Open - output.pcap
+
+Задание для самостоятельной отработки (необязательно к выполнению)
+8*. Просканируйте хост scanme.nmap.org. Какие сервисы запущены?
+```
+vagrant@netology:~$ sudo nmap -sV -allports -O -v scanme.nmap.org 
+Starting Nmap 7.80 ( https://nmap.org ) at 2022-06-04 16:53 UTC 
+NSE: Loaded 45 scripts for scanning. 
+Initiating Ping Scan at 16:53 
+Scanning scanme.nmap.org (45.33.32.156) [4 ports] 
+Completed Ping Scan at 16:53, 0.04s elapsed (1 total hosts) 
+Initiating Parallel DNS resolution of 1 host. at 16:53 
+Completed Parallel DNS resolution of 1 host. at 16:53, 0.00s elapsed 
+Initiating SYN Stealth Scan at 16:53 
+Scanning scanme.nmap.org (45.33.32.156) [1000 ports] 
+Discovered open port 80/tcp on 45.33.32.156 
+Discovered open port 22/tcp on 45.33.32.156 
+Discovered open port 31337/tcp on 45.33.32.156
+```
+
+открыто 3 порта 22 (SSH),  80 (HTTP) и 31337 (Back Orifice - Бэкдор, часто используется для троянов)
+
+9*. Установите и настройте фаервол ufw на web-сервер из задания 3. Откройте доступ снаружи только к портам 22,80,443
+```
+vagrant@netology:~$ sudo ufw status 
+Status: active 
+To                         Action      From 
+--                         ------      ---- 
+Apache Full                ALLOW       Anywhere 
+OpenSSH                    ALLOW       Anywhere
+```
+
+содержимое конфига
+```
+vagrant@netology:~$ sudo vim /etc/ufw/user.rules
+*filter 
+:ufw-user-input - [0:0] 
+:ufw-user-output - [0:0] 
+:ufw-user-forward - [0:0] 
+:ufw-before-logging-input - [0:0] 
+:ufw-before-logging-output - [0:0] 
+:ufw-before-logging-forward - [0:0] 
+:ufw-user-logging-input - [0:0] 
+:ufw-user-logging-output - [0:0] 
+:ufw-user-logging-forward - [0:0] 
+:ufw-after-logging-input - [0:0] 
+:ufw-after-logging-output - [0:0] 
+:ufw-after-logging-forward - [0:0] 
+:ufw-logging-deny - [0:0] 
+:ufw-logging-allow - [0:0] 
+:ufw-user-limit - [0:0] 
+:ufw-user-limit-accept - [0:0] 
+### RULES ### 
+### tuple ### allow tcp 80,443 0.0.0.0/0 any 0.0.0.0/0 Apache%20Full - in 
+-A ufw-user-input -p tcp -m multiport --dports 80,443 -j ACCEPT -m comment --comment 'dapp_Apache%20Full' 
+### tuple ### allow tcp 22 0.0.0.0/0 any 0.0.0.0/0 OpenSSH - in 
+-A ufw-user-input -p tcp --dport 22 -j ACCEPT -m comment --comment 'dapp_OpenSSH' 
+### END RULES ### 
+### LOGGING ### 
+-A ufw-after-logging-input -j LOG --log-prefix "[UFW BLOCK] " -m limit --limit 3/min --limit-burst 10 
+-A ufw-after-logging-forward -j LOG --log-prefix "[UFW BLOCK] " -m limit --limit 3/min --limit-burst 10 
+-I ufw-logging-deny -m conntrack --ctstate INVALID -j RETURN -m limit --limit 3/min --limit-burst 10 
+-A ufw-logging-deny -j LOG --log-prefix "[UFW BLOCK] " -m limit --limit 3/min --limit-burst 10 
+-A ufw-logging-allow -j LOG --log-prefix "[UFW ALLOW] " -m limit --limit 3/min --limit-burst 10 
+### END LOGGING ###
+```
