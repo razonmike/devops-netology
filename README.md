@@ -139,3 +139,4 @@ done
 vagrant@netology:~$ cat error_ip.log
 Не доступен 192.168.0.1 status=28
 ```
+
