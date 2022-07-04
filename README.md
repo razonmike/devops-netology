@@ -1,65 +1,134 @@
-Задача 1
-Опишите своими словами основные преимущества применения на практике IaaC паттернов.
-Какой из принципов IaaC является основополагающим?
-```
-IaaC создан для решения задач максимально систематизированным образом. IaaC это процесс управления датацентрами и серверами с помощью машиночитаемых паттернов, созданный как альтернатива физической настройке оборудования системным администратором. Теперь, вместо того, чтобы запускать сотню различных файлов конфигурации вручную, IaaC позволяет просто запустить готовый скрипт паттерна, который в автоматическом режиме поднимет инфраструктуру, проверит каждую задачу на ошибки, исключая человеческий фактор.
-
-Основополагающим принципом, в рамках IaaC, на мой взгляд является обеспечение идемпотентности. 
-```
-
-Задача 2
-Чем Ansible выгодно отличается от других систем управление конфигурациями?
-```
-Ansible отосительно других систем прост в использовании, не требует установки агента на хостовую машину, имеет YAML-подобный DSL, написан на Python, а так же может расширяется за счет модулей-плагинов. 
-```
-Какой, на ваш взгляд, метод работы систем конфигурации более надёжный push или pull?
-```
-Метод push не требует установки агентов, в отличии от pull метода где такие агенты необходимы, что может быть причиной недоступности сервиса, в случае отказа или зависания агента
+1. Есть скрипт:
+```python
+#!/usr/bin/env python3
+a = 1
+b = '2'
+c = a + b
 ```
 
-Задача 3
-Установить на личный компьютер:
-VirtualBox
-```
-Oracle VM VirtualBox VM Selector v6.1.32_Ubuntu
-```
-Vagrant
-```
-$ vagrant --version 
-Vagrant 2.2.19
-```
-Ansible
-```
-vagrant@netology:~$ ansible --version 
-ansible 2.9.6 
-  config file = /etc/ansible/ansible.cfg 
-  configured module search path = ['/home/vagrant/.ansible/plugins/modules', '/usr/share/ansible/plugins/modules'] 
-  ansible python module location = /usr/lib/python3/dist-packages/ansible 
-  executable location = /usr/bin/ansible 
-  python version = 3.8.10 (default, Mar 15 2022, 12:22:08) [GCC 9.4.0]
+Какое значение будет присвоено переменной c?      Выйдет ошибка, TypeError: unsupported operand type(s) for +: 'int' and 'str', данные типы не соответсвуют операции
+Как получить для переменной c значение 12?    Исправить на c = str (a) + b
+Как получить для переменной c значение 3?    Исправить на c = a + int (b)
+
+2. 
+Мы устроились на работу в компанию, где раньше уже был DevOps Engineer. Он написал скрипт, позволяющий узнать, какие файлы модифицированы в репозитории, относительно локальных изменений. Этим скриптом недовольно начальство, потому что в его выводе есть не все изменённые файлы, а также непонятен полный путь к директории, где они находятся. Как можно доработать скрипт ниже, чтобы он исполнял требования вашего руководителя?
+```python
+#!/usr/bin/env python3
+
+import os
+
+bash_command = ["cd ~/netology/sysadm-homeworks", "git status"]
+result_os = os.popen(' && '.join(bash_command)).read()
+is_change = False
+for result in result_os.split('\n'):
+    if result.find('modified') != -1:
+        prepare_result = result.replace('\tmodified:   ', '')
+        print(prepare_result)
+        break
 ```
 
-Приложить вывод команд установленных версий каждой из программ, оформленный в markdown.
+Мой скрипт:
 
-Задача 4 (*)
-Создать виртуальную машину.
-Зайти внутрь ВМ, убедиться, что Docker установлен с помощью команды
+```python
+#!/usr/bin/env python3
+
+import os
+
+bash_command = ["cd ~/git_netology", "git status"] 
+result_os = os.popen(' && '.join(bash_command)).read() 
+for result in result_os.split('\n'): 
+    if result.find('modified') != -1: 
+        prepare_result = result.replace('\tmodified:   ', '') 
+        print(f'/home/vagrant/git_netology/{prepare_result}')
+```
+
+Вывод скрипта при запуске при тестировании:
+
 ```bash
-root@netology:~/git_netology/05-virt-02-iaac/src/vagrant# vagrant ssh server1.netology 
-Welcome to Ubuntu 20.04.4 LTS (GNU/Linux 5.4.0-110-generic x86_64) 
- * Documentation:  https://help.ubuntu.com 
- * Management:     https://landscape.canonical.com 
- * Support:        https://ubuntu.com/advantage 
-  System information as of Tue 28 Jun 2022 07:53:32 PM UTC 
-  System load:  0.28               Users logged in:          0 
-  Usage of /:   13.0% of 30.63GB   IPv4 address for docker0: 172.17.0.1 
-  Memory usage: 24%                IPv4 address for eth0:    10.0.2.15 
-  Swap usage:   0%                 IPv4 address for eth1:    192.168.56.11 
-  Processes:    114 
-This system is built by the Bento project by Chef Software 
-More information can be found at https://github.com/chef/bento 
-Last login: Tue Jun 28 19:51:55 2022 from 10.0.2.2 
-vagrant@server1:~$ docker ps 
-CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES 
-vagrant@server1:~$
+vagrant@netology:~/git_netology$ git status                                                                                                                                                                                                                 
+On branch master  
+No commits yet 
+Changes to be committed: 
+  (use "git rm --cached <file>..." to unstage) 
+        new file:   test.py 
+Changes not staged for commit: 
+  (use "git add <file>..." to update what will be committed) 
+  (use "git restore <file>..." to discard changes in working directory) 
+        modified:   test.py
+
+vagrant@netology:~$ ./check_git_status.py   
+/home/vagrant/git_netology/test.py
+```
+
+3. Доработать скрипт выше так, чтобы он мог проверять не только локальный репозиторий в текущей директории, а также умел воспринимать путь к репозиторию, который мы передаём как входной параметр. Мы точно знаем, что начальство коварное и будет проверять работу этого скрипта в директориях, которые не являются локальными репозиториями.
+```python
+#!/usr/bin/env python3 
+import os 
+import sys
+
+param = sys.argv[1] 
+bash_command = [f'cd {param}', "git status"] 
+result_os = os.popen(' && '.join(bash_command)).read() 
+for result in result_os.split('\n'): 
+    if result.find('modified') != -1: 
+        prepare_result = result.replace('\tmodified:   ', '') 
+        print(f'{param}/{prepare_result}')
+```
+
+Вывод
+```bash
+vagrant@netology:~$ git status                                                                                                                                                                           
+On branch master  
+No commits yet 
+Changes to be committed: 
+  (use "git rm --cached <file>..." to unstage) 
+        new file:   git_netology/test.py 
+Changes not staged for commit: 
+  (use "git add <file>..." to update what will be committed) 
+  (use "git restore <file>..." to discard changes in working directory) 
+        modified:   git_netology/test.py
+
+vagrant@netology:~$ ./check_git_status2.py /home/vagrant/git_netology 
+/home/vagrant/git_netology/test.py
+```
+
+4. Наша команда разрабатывает несколько веб-сервисов, доступных по http. Мы точно знаем, что на их стенде нет никакой балансировки, кластеризации, за DNS прячется конкретный IP сервера, где установлен сервис. Проблема в том, что отдел, занимающийся нашей инфраструктурой очень часто меняет нам сервера, поэтому IP меняются примерно раз в неделю, при этом сервисы сохраняют за собой DNS имена. Это бы совсем никого не беспокоило, если бы несколько раз сервера не уезжали в такой сегмент сети нашей компании, который недоступен для разработчиков. Мы хотим написать скрипт, который опрашивает веб-сервисы, получает их IP, выводит информацию в стандартный вывод в виде: <URL сервиса> - <его IP>. Также, должна быть реализована возможность проверки текущего IP сервиса c его IP из предыдущей проверки. Если проверка будет провалена - оповестить об этом в стандартный вывод сообщением: [ERROR] <URL сервиса> IP mismatch: <старый IP> <Новый IP>. Будем считать, что наша разработка реализовала сервисы: drive.google.com, mail.google.com, google.com.
+
+```python
+#!/usr/bin/env python3
+
+import socket as s 
+import time as t 
+import datetime as dt
+
+i = 1 
+wait = 1 
+srv = {'drive.google.com':'0.0.0.0', 'mail.google.com':'0.0.0.0', 'google.com':'0.0.0.0'} 
+init=0
+
+print('*** start script ***') 
+print(srv) 
+print('********************')
+
+while 1==1 : 
+  for host in srv: 
+    ip = s.gethostbyname(host) 
+    if ip != srv[host]: 
+      if i==1 and init !=1: 
+        print(str(dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")) +' [ERROR] ' + str(host) +' IP mistmatch: '+srv[host]+' '+ip) 
+      srv[host]=ip
+```
+
+```bash
+vagrant@netology:~$ ./ping_http.py 
+*** start script *** 
+{'drive.google.com': '0.0.0.0', 'mail.google.com': '0.0.0.0', 'google.com': '0.0.0.0'} 
+******************** 
+2022-06-27 23:20:04 [ERROR] drive.google.com IP mistmatch: 0.0.0.0 74.125.131.194 
+2022-06-27 23:20:04 [ERROR] mail.google.com IP mistmatch: 0.0.0.0 209.85.233.17 
+2022-06-27 23:20:04 [ERROR] google.com IP mistmatch: 0.0.0.0 173.194.220.101 
+2022-06-27 23:20:20 [ERROR] mail.google.com IP mistmatch: 209.85.233.17 209.85.233.18 
+2022-06-27 23:20:20 [ERROR] mail.google.com IP mistmatch: 209.85.233.18 209.85.233.17 
+2022-06-27 23:20:28 [ERROR] google.com IP mistmatch: 173.194.220.101 173.194.220.113
+2022-06-27 23:20:29 [ERROR] google.com IP mistmatch: 108.177.14.101 108.177.14.138
 ```
