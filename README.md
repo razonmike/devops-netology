@@ -132,3 +132,4 @@ vagrant@netology:~$ ./ping_http.py
 2022-06-27 23:20:28 [ERROR] google.com IP mistmatch: 173.194.220.101 173.194.220.113
 2022-06-27 23:20:29 [ERROR] google.com IP mistmatch: 108.177.14.101 108.177.14.138
 ```
+
