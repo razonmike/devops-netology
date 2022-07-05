@@ -90,6 +90,16 @@ print('check done')
 root@netology:~/python# ./ping_check.py
 ping checking...
 {'drive.google.com': '0.0.0.0', 'mail.google.com': '0.0.0.0', 'google.com': '0.0.0.0'}
+1
+2
+3
+4
+5
+6
+7
+8
+9
+check done
 ```
 
 json-файл(ы), который(е) записал ваш скрипт:
